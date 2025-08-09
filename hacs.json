@@ -1,0 +1,11 @@
+{
+  "name": "Polskie Radio Dzieciom",
+  "country": "PL",
+  "render_readme": true,
+  "homeassistant": "2024.1.0",
+  "hide_default_branch": false,
+  "zip_release": false,
+  "filename": "",
+  "persistent_directory": "",
+  "iot_class": "cloud_polling"
+}

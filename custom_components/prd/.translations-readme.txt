@@ -1,0 +1,1 @@
+This integration ships minimal translations; extend as needed.

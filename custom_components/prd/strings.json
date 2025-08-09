@@ -1,0 +1,10 @@
+{
+  "title": "Polskie Radio Dzieciom",
+  "config": {
+    "step": {
+      "user": {
+        "description": "Add the PRD integration"
+      }
+    }
+  }
+}
