@@ -85,6 +85,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 stop = datetime.fromisoformat(stop_str)
             except Exception:
                 continue
+            # Some items cross midnight and may report stop <= start; normalize by adding a day
+            if stop <= start:
+                stop = stop + timedelta(days=1)
             photo_raw = item.get("Photo")
             photo = None
             if isinstance(photo_raw, str):
@@ -94,6 +97,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     photo = photo_raw
                 else:
                     photo = None
+            link_raw = item.get("ArticleLink")
+            article_link = None
+            if isinstance(link_raw, str):
+                link_raw = link_raw.strip()
+                if link_raw.startswith("//"):
+                    article_link = f"https:{link_raw}"
+                elif link_raw.startswith("http"):
+                    article_link = link_raw
             if start.date() != today_local and stop.date() != today_local:
                 # Keep also items that cross midnight if either date is today
                 pass
@@ -106,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     "stop": stop,
                     "photo": photo,
                     "leaders": item.get("Leaders"),
-                    "article_link": item.get("ArticleLink"),
+                    "article_link": article_link,
                     "category": item.get("Category", {}).get("Name"),
                 }
             )
@@ -186,13 +197,18 @@ def _serialize_prog(
     if duration > 0:
         progress = max(0.0, min(1.0, elapsed / duration))
     leaders = prog.get("leaders") or []
-    leader_names = ", ".join(
-        [
-            " ".join([p.get("Name", "").strip(), p.get("SurName", "").strip()]).strip()
-            for p in leaders
-            if isinstance(p, dict)
-        ]
-    ) or None
+    leader_names = (
+        ", ".join(
+            [
+                " ".join(
+                    [p.get("Name", "").strip(), p.get("SurName", "").strip()]
+                ).strip()
+                for p in leaders
+                if isinstance(p, dict)
+            ]
+        )
+        or None
+    )
     return {
         "id": prog.get("id"),
         "title": prog.get("title"),
@@ -206,7 +222,9 @@ def _serialize_prog(
         "starts_in": max(0, int(starts_in)),
         "duration": int(duration),
         "progress": None if is_next else progress,
-        "progress_percent": 0 if is_next else (None if progress is None else int(progress * 100)),
+        "progress_percent": (
+            0 if is_next else (None if progress is None else int(progress * 100))
+        ),
         "start_time": prog["start"].strftime("%H:%M"),
         "stop_time": prog["stop"].strftime("%H:%M"),
         "leaders": leaders,
