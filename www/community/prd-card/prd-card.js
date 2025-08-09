@@ -48,9 +48,23 @@ class PrdCard extends HTMLElement {
     const cur = attrs.current;
     const next = attrs.next;
     this.$('#current').innerHTML = cur ? `<div class="title">Now: ${cur.title}</div><div class="time">${cur.start_time} - ${cur.stop_time}</div>` : '<div>Nothing currently</div>';
-    const progress = Math.round(((cur && cur.progress) ? cur.progress*100 : 0));
+    let progress = 0;
+    if (cur && cur.start && cur.stop) {
+      const now = Date.now();
+      const start = new Date(cur.start).getTime();
+      const stop = new Date(cur.stop).getTime();
+      if (stop > start) {
+        progress = Math.max(0, Math.min(100, Math.round(((now - start) / (stop - start)) * 100)));
+      }
+    }
     this.$('#progress').value = progress;
-    const nextCountdown = next ? this._mmss(next.starts_in) : '';
+    let nextCountdown = '';
+    if (next && next.start) {
+      const now = Date.now();
+      const start = new Date(next.start).getTime();
+      const diff = Math.max(0, Math.round((start - now) / 1000));
+      nextCountdown = this._mmss(diff);
+    }
     this.$('#next').innerHTML = next ? `<div class="title">Next: ${next.title}</div><div class="time">starts ${next.start_time} in ${nextCountdown}</div>` : '';
 
     const list = attrs.rest_of_day || [];
