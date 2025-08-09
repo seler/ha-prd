@@ -1,7 +1,7 @@
 {
   "domain": "prd",
   "name": "Polskie Radio Dzieciom",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "documentation": "https://github.com/seler/ha-prd",
   "issue_tracker": "https://github.com/seler/ha-prd/issues",
   "codeowners": ["@seler"],

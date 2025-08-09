@@ -7,6 +7,7 @@ from homeassistant.core import callback
 
 from .const import DOMAIN
 
+
 class PRDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
@@ -17,6 +18,7 @@ class PRDConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         return PRDOptionsFlowHandler(config_entry)
+
 
 class PRDOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:

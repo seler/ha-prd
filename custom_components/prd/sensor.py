@@ -25,11 +25,13 @@ async def async_setup_entry(
 ) -> None:
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: DataUpdateCoordinator = data["coordinator"]
-    async_add_entities([
-        PRDScheduleSensor(coordinator, entry),
-        PRDNowSensor(coordinator, entry),
-        PRDNextSensor(coordinator, entry),
-    ])
+    async_add_entities(
+        [
+            PRDScheduleSensor(coordinator, entry),
+            PRDNowSensor(coordinator, entry),
+            PRDNextSensor(coordinator, entry),
+        ]
+    )
 
 
 class PRDScheduleSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity):
@@ -54,7 +56,9 @@ class PRDScheduleSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity):
 
 
 class _BaseProgSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity):
-    def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry, kind: str) -> None:
+    def __init__(
+        self, coordinator: DataUpdateCoordinator, entry: ConfigEntry, kind: str
+    ) -> None:
         super().__init__(coordinator)
         self._kind = kind  # 'current' or 'next'
         self._attr_unique_id = f"{entry.entry_id}_{kind}"
@@ -88,15 +92,19 @@ class _BaseProgSensor(CoordinatorEntity[DataUpdateCoordinator], SensorEntity):
             "duration": p.get("duration"),
         }
         if self._kind == "current":
-            attrs.update({
-                "elapsed": p.get("elapsed"),
-                "remaining": p.get("remaining"),
-                "progress_percent": p.get("progress_percent"),
-            })
+            attrs.update(
+                {
+                    "elapsed": p.get("elapsed"),
+                    "remaining": p.get("remaining"),
+                    "progress_percent": p.get("progress_percent"),
+                }
+            )
         else:
-            attrs.update({
-                "starts_in": p.get("starts_in"),
-            })
+            attrs.update(
+                {
+                    "starts_in": p.get("starts_in"),
+                }
+            )
         return attrs
 
     @property
