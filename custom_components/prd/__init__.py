@@ -43,6 +43,14 @@ BROWSER_HEADERS = {
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    async def _handle_refresh_service(call):
+        domain_data = hass.data.get(DOMAIN, {})
+        for entry_id, data in domain_data.items():
+            coordinator: DataUpdateCoordinator = data.get("coordinator")
+            if coordinator:
+                await coordinator.async_request_refresh()
+
+    hass.services.async_register(DOMAIN, "refresh", _handle_refresh_service)
     return True
 
 

@@ -11,8 +11,8 @@ class PrdCard extends HTMLElement {
     const lang = (this._hass && (this._hass.locale?.language || this._hass.language)) || (navigator.language || 'en');
     const l = ('' + lang).toLowerCase().startsWith('pl') ? 'pl' : 'en';
     const dict = {
-      en: { now: 'Now', next: 'Next', show: 'Show rest of day', hide: 'Hide', nothing: 'Nothing currently', starts: 'starts' },
-      pl: { now: 'Teraz', next: 'Następne', show: 'Pokaż resztę dnia', hide: 'Ukryj', nothing: 'Brak audycji', starts: 'start' }
+      en: { now: 'Now', next: 'Next', show: 'Show rest of day', hide: 'Hide', nothing: 'Nothing currently', starts: 'starts', entity_missing: 'Entity not found' },
+      pl: { now: 'Teraz', next: 'Następne', show: 'Pokaż resztę dnia', hide: 'Ukryj', nothing: 'Brak audycji', starts: 'start', entity_missing: 'Nie znaleziono encji' }
     };
     return (dict[l] && dict[l][key]) || (dict.en[key]) || key;
   }
@@ -56,7 +56,13 @@ class PrdCard extends HTMLElement {
   _update() {
     if (!this._hass) return;
     const ent = this._hass.states[this.config.entity || 'sensor.polskie_radio_dzieciom_schedule'];
-    if (!ent) return;
+    if (!ent) {
+      this.$('#current').innerHTML = `<div class="title">${this._t('entity_missing')}: ${(this.config && this.config.entity) || ''}</div>`;
+      this.$('#progress').value = 0;
+      this.$('#next').innerHTML = '';
+      this.$('#list').innerHTML = '';
+      return;
+    }
   const attrs = ent.attributes || {};
     const cur = attrs.current;
     const next = attrs.next;
