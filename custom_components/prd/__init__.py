@@ -10,8 +10,8 @@ from typing import Any, Optional
 import aiohttp
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.const import Platform, EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -119,10 +119,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER,
         name="prd_schedule",
         update_method=fetch_schedule,
-        update_interval=timedelta(hours=1),
+        # Start with shorter interval to recover quickly after boot, then switch to hourly
+        update_interval=timedelta(minutes=5),
     )
 
     await coordinator.async_config_entry_first_refresh()
+
+    @callback
+    def _on_coordinator_update():
+        # When we have data, slow down to hourly to meet the requirement
+        if coordinator.data:
+            coordinator.update_interval = timedelta(hours=1)
+
+    # Watch for first success
+    coordinator.async_add_listener(_on_coordinator_update)
+
+    # Also refresh once HA fully started (network stack up)
+    async def _ha_started(_event):
+        await coordinator.async_request_refresh()
+
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _ha_started)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
