@@ -31,6 +31,9 @@ class PrdCard extends HTMLElement {
         .expand { cursor:pointer; color: var(--primary-color); margin-top:8px; }
         .hidden { display:none; }
         .list .item { padding: 6px 0; border-top: 1px solid var(--divider-color); }
+        .meta { color: var(--secondary-text-color); font-size: 0.9em; }
+        .row-img { display:flex; align-items:center; gap: 8px; }
+        .thumb { width: 28px; height: 28px; border-radius: 4px; object-fit: cover; }
       </style>
       <ha-card>
         <div class="card">
@@ -66,7 +69,15 @@ class PrdCard extends HTMLElement {
   const attrs = ent.attributes || {};
     const cur = attrs.current;
     const next = attrs.next;
-  this.$('#current').innerHTML = cur ? `<div class="title">${this._t('now')}: ${cur.title}</div><div class="time">${cur.start_time} - ${cur.stop_time}</div>` : `<div>${this._t('nothing')}</div>`;
+    this.$('#current').innerHTML = cur ? `
+      <div class="row-img">
+        ${cur.photo ? `<img class="thumb" src="${cur.photo}" alt=""/>` : ''}
+        <div>
+          <div class="title">${this._t('now')}: ${cur.title}</div>
+          <div class="meta">${cur.leaders_names || ''}</div>
+        </div>
+        <div class="time">${cur.start_time} - ${cur.stop_time}</div>
+      </div>` : `<div>${this._t('nothing')}</div>`;
     let progress = 0;
     if (cur && cur.start && cur.stop) {
       const now = Date.now();
@@ -84,10 +95,28 @@ class PrdCard extends HTMLElement {
       const diff = Math.max(0, Math.round((start - now) / 1000));
       nextCountdown = this._mmss(diff);
     }
-  this.$('#next').innerHTML = next ? `<div class="title">${this._t('next')}: ${next.title}</div><div class="time">${this._t('starts')} ${next.start_time} in ${nextCountdown}</div>` : '';
+    this.$('#next').innerHTML = next ? `
+      <div class="row-img">
+        ${next.photo ? `<img class="thumb" src="${next.photo}" alt=""/>` : ''}
+        <div>
+          <div class="title">${this._t('next')}: ${next.title}</div>
+          <div class="meta">${next.leaders_names || ''}</div>
+        </div>
+        <div class="time">${this._t('starts')} ${next.start_time} in ${nextCountdown}</div>
+      </div>` : '';
 
     const list = attrs.rest_of_day || [];
-    this.$('#list').innerHTML = list.map(p => `<div class="item"><span class="title">${p.title}</span> <span class="time">${p.start_time}</span></div>`).join('');
+    this.$('#list').innerHTML = list.map(p => `
+      <div class="item">
+        <div class="row-img">
+          ${p.photo ? `<img class="thumb" src="${p.photo}" alt=""/>` : ''}
+          <div>
+            <div class="title">${p.title}</div>
+            <div class="meta">${p.leaders_names || ''}</div>
+          </div>
+          <div class="time">${p.start_time}</div>
+        </div>
+      </div>`).join('');
   }
 
   disconnectedCallback() { if (this._timer) clearInterval(this._timer); }

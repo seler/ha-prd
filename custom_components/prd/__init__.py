@@ -85,6 +85,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 stop = datetime.fromisoformat(stop_str)
             except Exception:
                 continue
+            photo_raw = item.get("Photo")
+            photo = None
+            if isinstance(photo_raw, str):
+                if photo_raw.startswith("//"):
+                    photo = f"https:{photo_raw}"
+                elif photo_raw.startswith("http"):
+                    photo = photo_raw
+                else:
+                    photo = None
             if start.date() != today_local and stop.date() != today_local:
                 # Keep also items that cross midnight if either date is today
                 pass
@@ -95,8 +104,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     "description": item.get("Description"),
                     "start": start,
                     "stop": stop,
-                    "photo": item.get("Photo"),
+                    "photo": photo,
                     "leaders": item.get("Leaders"),
+                    "article_link": item.get("ArticleLink"),
                     "category": item.get("Category", {}).get("Name"),
                 }
             )
@@ -175,6 +185,14 @@ def _serialize_prog(
     progress = None
     if duration > 0:
         progress = max(0.0, min(1.0, elapsed / duration))
+    leaders = prog.get("leaders") or []
+    leader_names = ", ".join(
+        [
+            " ".join([p.get("Name", "").strip(), p.get("SurName", "").strip()]).strip()
+            for p in leaders
+            if isinstance(p, dict)
+        ]
+    ) or None
     return {
         "id": prog.get("id"),
         "title": prog.get("title"),
@@ -188,6 +206,10 @@ def _serialize_prog(
         "starts_in": max(0, int(starts_in)),
         "duration": int(duration),
         "progress": None if is_next else progress,
+        "progress_percent": 0 if is_next else (None if progress is None else int(progress * 100)),
         "start_time": prog["start"].strftime("%H:%M"),
         "stop_time": prog["stop"].strftime("%H:%M"),
+        "leaders": leaders,
+        "leaders_names": leader_names,
+        "article_link": prog.get("article_link"),
     }
