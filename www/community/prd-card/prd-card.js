@@ -1,14 +1,27 @@
 class PrdCard extends HTMLElement {
-  static getConfigElement() { return document.createElement('prd-card-editor'); }
-  static getStubConfig() { return {}; }
+  static getStubConfig() { return { entity: 'sensor.polskie_radio_dzieciom_schedule' }; }
   set hass(hass) { this._hass = hass; this._render(); }
-  setConfig(config) { this.config = config || {}; this._render(); }
+  setConfig(config) {
+    if (!config || !config.entity) throw new Error('Entity is required');
+    this.config = config;
+    this._render();
+  }
+
+  _t(key) {
+    const lang = (this._hass && (this._hass.locale?.language || this._hass.language)) || (navigator.language || 'en');
+    const l = ('' + lang).toLowerCase().startsWith('pl') ? 'pl' : 'en';
+    const dict = {
+      en: { now: 'Now', next: 'Next', show: 'Show rest of day', hide: 'Hide', nothing: 'Nothing currently', starts: 'starts' },
+      pl: { now: 'Teraz', next: 'Następne', show: 'Pokaż resztę dnia', hide: 'Ukryj', nothing: 'Brak audycji', starts: 'start' }
+    };
+    return (dict[l] && dict[l][key]) || (dict.en[key]) || key;
+  }
 
   _render() {
     if (!this._hass || this.rendered) return;
     this.rendered = true;
     const root = this.attachShadow({ mode: 'open' });
-    root.innerHTML = `
+  root.innerHTML = `
       <style>
         .card { padding: 16px; }
         .row { display:flex; justify-content:space-between; align-items:center; margin: 6px 0; }
@@ -24,14 +37,14 @@ class PrdCard extends HTMLElement {
           <div id="current" class="row"></div>
           <progress id="progress" max="100" value="0"></progress>
           <div id="next" class="row"></div>
-          <div id="expand" class="expand">Show rest of day</div>
+      <div id="expand" class="expand">${this._t('show')}</div>
           <div id="list" class="list hidden"></div>
         </div>
       </ha-card>`;
     this.$ = (sel) => root.querySelector(sel);
     this.$('#expand').addEventListener('click', () => {
       this.$('#list').classList.toggle('hidden');
-      this.$('#expand').textContent = this.$('#list').classList.contains('hidden') ? 'Show rest of day' : 'Hide';
+    this.$('#expand').textContent = this.$('#list').classList.contains('hidden') ? this._t('show') : this._t('hide');
     });
     this._update();
     this._timer = setInterval(() => this._update(), 30000);
@@ -44,10 +57,10 @@ class PrdCard extends HTMLElement {
     if (!this._hass) return;
     const ent = this._hass.states[this.config.entity || 'sensor.polskie_radio_dzieciom_schedule'];
     if (!ent) return;
-    const attrs = ent.attributes || {};
+  const attrs = ent.attributes || {};
     const cur = attrs.current;
     const next = attrs.next;
-    this.$('#current').innerHTML = cur ? `<div class="title">Now: ${cur.title}</div><div class="time">${cur.start_time} - ${cur.stop_time}</div>` : '<div>Nothing currently</div>';
+  this.$('#current').innerHTML = cur ? `<div class="title">${this._t('now')}: ${cur.title}</div><div class="time">${cur.start_time} - ${cur.stop_time}</div>` : `<div>${this._t('nothing')}</div>`;
     let progress = 0;
     if (cur && cur.start && cur.stop) {
       const now = Date.now();
@@ -65,7 +78,7 @@ class PrdCard extends HTMLElement {
       const diff = Math.max(0, Math.round((start - now) / 1000));
       nextCountdown = this._mmss(diff);
     }
-    this.$('#next').innerHTML = next ? `<div class="title">Next: ${next.title}</div><div class="time">starts ${next.start_time} in ${nextCountdown}</div>` : '';
+  this.$('#next').innerHTML = next ? `<div class="title">${this._t('next')}: ${next.title}</div><div class="time">${this._t('starts')} ${next.start_time} in ${nextCountdown}</div>` : '';
 
     const list = attrs.rest_of_day || [];
     this.$('#list').innerHTML = list.map(p => `<div class="item"><span class="title">${p.title}</span> <span class="time">${p.start_time}</span></div>`).join('');
@@ -78,14 +91,9 @@ class PrdCard extends HTMLElement {
 
 customElements.define('prd-card', PrdCard);
 
-class PrdCardEditor extends HTMLElement {
-  setConfig(config) { this.config = config; }
-  set hass(hass) {
-    if (this._root) return;
-    this._root = this.attachShadow({mode:'open'});
-    this._root.innerHTML = `<div>
-      <paper-input label="Entity" value="${(this.config && this.config.entity) || 'sensor.polskie_radio_dzieciom_schedule'}"></paper-input>
-    </div>`;
-  }
-}
-customElements.define('prd-card-editor', PrdCardEditor);
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: 'prd-card',
+  name: 'Polskie Radio Dzieciom',
+  description: 'Current and upcoming schedule with progress and countdown'
+});

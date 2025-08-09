@@ -1,4 +1,5 @@
 """Polskie Radio Dzieciom integration."""
+
 from __future__ import annotations
 
 import asyncio
@@ -40,8 +41,10 @@ BROWSER_HEADERS = {
     "Origin": "https://www.polskieradio.pl",
 }
 
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Use HA shared session
@@ -52,7 +55,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         now = datetime.now(timezone.utc).astimezone()
         today_local = now.date()
         try:
-            async with session.get(API_URL, headers=BROWSER_HEADERS, timeout=15) as resp:
+            async with session.get(
+                API_URL, headers=BROWSER_HEADERS, timeout=15
+            ) as resp:
                 if resp.status != 200:
                     _LOGGER.warning("PRD API returned status %s", resp.status)
                     return None
@@ -94,14 +99,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for prog in parsed:
             if prog["start"] <= now <= prog["stop"]:
                 current = prog
-            if prog["start"] > now and (next_prog is None or prog["start"] < next_prog["start"]):
+            if prog["start"] > now and (
+                next_prog is None or prog["start"] < next_prog["start"]
+            ):
                 next_prog = prog
 
         return {
             "now": now.isoformat(),
             "current": _serialize_prog(current, now),
             "next": _serialize_prog(next_prog, now, is_next=True),
-            "rest_of_day": [_serialize_prog(p, now) for p in parsed if p["start"] >= now],
+            "rest_of_day": [
+                _serialize_prog(p, now) for p in parsed if p["start"] >= now
+            ],
             "raw": parsed,
         }
 
@@ -110,7 +119,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER,
         name="prd_schedule",
         update_method=fetch_schedule,
-        update_interval=timedelta(minutes=5),
+        update_interval=timedelta(hours=1),
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -123,13 +132,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     data = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     return unloaded
 
 
-def _serialize_prog(prog: Optional[dict[str, Any]], now: datetime, *, is_next: bool = False) -> Optional[dict[str, Any]]:
+def _serialize_prog(
+    prog: Optional[dict[str, Any]], now: datetime, *, is_next: bool = False
+) -> Optional[dict[str, Any]]:
     if not prog:
         return None
     duration = (prog["stop"] - prog["start"]).total_seconds()
