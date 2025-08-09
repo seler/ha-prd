@@ -1,4 +1,4 @@
-# Polskie Radio Dzieciom (Home Assistant)
+# Ramówka Polskiego Radia Dzieciom w Home Assistant
 
 Home Assistant custom integration and Lovelace card to display today's schedule for Polskie Radio Dzieciom.
 
